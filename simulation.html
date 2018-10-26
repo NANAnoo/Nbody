@@ -1,0 +1,249 @@
+<HTML>
+<head>
+	<script type="text/javascript">
+		var Last=[],Current=[];
+var ctx,count;
+		function init(){
+	var X,M;
+	ctx = document.getElementById("BOARD").getContext("2d");
+	count = 0+1;
+	var Point = [];
+	Point.push(900);
+	Point.push(500);
+	Point.push(0);
+	Point.push(0);
+	Point.push(0);
+	Last.push(Point);
+
+	for(var i=1;i<count;i++){
+		var Point = [];
+		if(i<count){
+			a = Math.random()*360;
+			//var w = Math.random()*10;
+		Point.push(50*Math.sin(a)+500);
+		Point.push(100*Math.cos(a)+500);
+		M=0;
+		}else{
+		Point.push(Math.random()*50*Math.sin(i/count*360)+850);
+		Point.push(Math.random()*50*Math.cos(i/count*360)+500);
+		M=0;
+		}
+		Point.push(1);
+		Point.push(0);
+		Point.push(M);
+		Last.push(Point);
+	}
+	/*for(var i=1;i<count;i++){
+		var Point = [];
+
+		Point.push(Math.random()*10*50+300);
+		Point.push(Math.random()*10*50+300);
+
+		Point.push(1);
+		Point.push(0);
+		Point.push(0);
+		Last.push(Point);
+	}*/
+	Current = Last;
+
+
+}
+f=0.001;
+G=0.02;
+mode = 1;
+function nextPosition(index){
+	var dx,dy,a,l;
+	for(var i=index+1;i<count;i++){
+		
+		dx = Last[i][0]-Last[index][0];
+		dy = Last[i][1]-Last[index][1];
+		l=Math.sqrt(dx*dx+dy*dy+0.0001);
+
+		AX = Math.sqrt(Last[index][2])+Math.sqrt(Last[i][2]);
+
+		if(l< AX +1&&mode==1){
+		    vx = Last[i][3];
+			vy = Last[i][4];
+			vx_ = Last[index][3];
+			vy_ = Last[index][4];
+
+		    m = Current[i][2];
+		    m_ = Current[index][2];
+			if(l==0){
+		        Current[i][3] = (m*vx+m_*vx_)/(m+m_);
+		        Current[i][4] = (m*vy+m_*vy_)/(m+m_);	
+		        Current[index][3] =  Current[i][3];
+		        Current[index][4] =  Current[i][4];	        
+		    continue;
+			}
+			dx /=l; 
+			dy /=l; 
+			L = vx*dx+vy*dy;
+		    cx = L*dx;
+		    cy = L*dy;
+		    nx = vx-cx;
+		    ny = vy-cy;
+            L = vx_*dx+vy_*dy;
+		    cx_ = L*dx;
+		    cy_ = L*dy;
+		    nx_ = vx_-cx_;
+		    ny_ = vy_-cy_;
+		    Current[i][3] = nx + ((m-m_)*cx+2*m_*cx_)/(m_+m);
+		    Current[i][4] = ny + ((m-m_)*cy+2*m_*cy_)/(m_+m);
+		    Current[index][3] = nx_ + ((m_-m)*cx_+2*m*cx)/(m_+m);
+		    Current[index][4] = ny_ +((m_-m)*cy_+2*m*cy)/(m_+m);
+		   // Current[i][3] = nx + cx_;
+		   // Current[i][4] = ny + cy_;
+		   // Current[index][3] = nx_ + cx;
+		   // Current[index][4] = ny_ + cy;
+		    continue;
+		}
+
+		    if(l<AX+1&&mode==2){
+			    dx = dx/l;
+		        dy = dy/l;
+		    	vx = Last[i][3];
+		    	vy = Last[i][4];
+			    vx_ = Last[index][3];
+			    vy_ = Last[index][4];
+			    L = vx*dx+vy*dy;
+		        cx = L*dx;
+		        cy = L*dy;
+		        nx = vx-cx;
+		        ny = vy-cy;
+                L = vx_*dx+vy_*dy;
+		        cx_ = L*dx;
+		        cy_ = L*dy;
+		        nx_ = vx_-cx_;
+		        ny_ = vy_-cy_;
+		    	a = 0.5*(l-AX);
+		    	Current[i][3] = nx+(1-f)*cx;
+	    		Current[i][4] = ny+(1-f)*cy;
+	    		Current[index][3] =nx_+(1-f)*cx_;
+	    		Current[index][4] =ny_+(1-f)*cy_;
+
+	    		Current[i][3]-=a*dx;
+		        Current[i][4]-=a*dy;
+		        Current[index][3]+=a*dx;
+		        Current[index][4]+=a*dy;
+	    		continue;
+        }
+        a = G*Last[index][2]/(l*l);
+		Current[i][3]-=a*dx;
+		Current[i][4]-=a*dy;
+		Current[index][3]+=a*dx;
+		Current[index][4]+=a*dy;
+	
+    }
+}
+function update(){
+	for(var i=1;i<count;i++){
+		nextPosition(i);
+	}
+	for(var index=1;index<count;index++){
+	Current[index][0] += Current[index][3]/100;
+	Current[index][1] += Current[index][4]/100;
+	}
+	Last = Current;
+}
+var mx,my,mvx,mvy,ismousedown,stop=false;
+function draw(){
+	ctx.fillStyle="#000000";
+	ctx.fillRect(0,0,1800,10000);
+
+	ctx.fillStyle="#FF0000";
+	var x,y;
+	ctx.fillRect(Current[0][0]-2,Current[0][1]-2,4,4);
+	
+	for(var i=1;i<count;i++){
+		ctx.beginPath();
+		ctx.strokeStyle="#00FFFF";
+		x = Math.round(Current[i][0]);
+		y = Math.round(Current[i][1]);
+		if(0<x&&x<1800&&0<y&&y<10000){
+			ctx.arc(x,y, Math.sqrt(Current[i][2]), 0, 2 * Math.PI);
+		}
+		ctx.stroke();
+	}
+	if(ismousedown){
+    	ctx.beginPath();
+    	ctx.strokeStyle="#0AFBCF";
+    	ctx.arc(mx,my, 20, 0, 2 * Math.PI);
+        // 起点
+         ctx.moveTo(mx, my);
+        // 终点
+         ctx.lineTo(mvx, mvy);
+         ctx.closePath();
+     	 ctx.stroke();
+	}
+	if(!stop)update();
+}
+document.onkeydown=function(event)
+{
+	if(event.key=="S"){
+		if(stop==false){
+			stop = true;
+			return;
+		}
+		if(stop==true)stop = false;
+		return;
+	}
+	if(event.key=="+"){
+		G +=0.001;
+	}
+	if(event.key=="-"){
+		if(G>0)G -=0.001;
+	}
+	if(event.key=="*"){
+		if(f<0.1)f += 0.0001;
+	}
+	if(event.key=="/"){
+		if(f>0)f -= 0.0001;
+	}
+	if(event.key=="1"){
+		mode =  1;
+	}
+	if(event.key=="2"){
+		mode =  2;
+	}
+}
+
+document.onmousedown=function (ev)
+    {
+    	mx = ev.pageX-10;
+    	my = ev.pageY-10;
+    	ismousedown = true;
+    };
+document.onmousemove=function (ev)
+    {
+    	mvx =ev.pageX;
+    	mvy =ev.pageY;
+    };
+
+document.onmouseup=function (ev)
+    {
+    	ismousedown = false;
+    	mvx =(ev.pageX-10 - mx);
+    	mvy =(ev.pageY-10 - my);
+    	P = [];
+    	P.push(mx);
+    	P.push(my);
+    	P.push(400);
+    	P.push(mvx);
+    	P.push(mvy);
+    	Current.push(P);
+    	count++;
+    };
+
+window.onload = function(){
+	init();
+
+	window.setInterval('draw();', 1);
+}
+	</script>
+</head>
+<body>
+	<canvas id="BOARD" width="1800" height="10000">
+</body>
+
+</HTML>
